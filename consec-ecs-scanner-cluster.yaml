@@ -115,7 +115,7 @@ Resources:
   ConsecEcsTaskConfigurations:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cloudguard-consec-onboarding.s3.us-west-2.amazonaws.com/consec/latest/templates/us1/common-resources/consec-ecs-task-definition-and-service.yaml
+      TemplateURL: https://consecpoc.s3.ap-east-1.amazonaws.com/consec-ecs-task-definition-and-service.yaml
       Parameters:
         Dome9PasswordSecret: !Ref Dome9PasswordSecret
         QuaySecret: !Ref QuaySecret
@@ -139,7 +139,7 @@ Resources:
   ConsecListEcsTaskConfigurations:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cloudguard-consec-onboarding.s3.us-west-2.amazonaws.com/consec/latest/templates/us1/common-resources/consec-ecs-task-definition-and-service.yaml
+      TemplateURL: https://consecpoc.s3.ap-east-1.amazonaws.com/consec-ecs-task-definition-and-service.yaml
       Parameters:
         Dome9PasswordSecret: !Ref Dome9PasswordSecret
         QuaySecret: !Ref QuaySecret
