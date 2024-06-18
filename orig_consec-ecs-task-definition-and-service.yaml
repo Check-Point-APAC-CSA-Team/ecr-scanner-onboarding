@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: 2010-09-09
 Description: Creates Task Definition and Service for Image Assurance Scanner
 Metadata:
   AWS::CloudFormation::Interface:
@@ -7,12 +7,14 @@ Metadata:
           default: CloudGuard
         Parameters:
           - Dome9PasswordSecret
+          - QuaySecret
           - CloudGuardScanningEnvironmentId
           - CloudGuardApiKey
           - RegistryAgentMode
       - Label:
           default: AWS
         Parameters:
+          - RegSecretArn
           - ExecutionRole
           - TaskRole
           - ECSClusterArn
@@ -22,8 +24,12 @@ Metadata:
           - Memory
           - Image
     ParameterLabels:
+      RegSecretArn:
+        default: Optional - Registry Secret Arn (Required for User Access Keys authentication)
       Dome9PasswordSecret:
         default: Dome9 Password Secret ARN
+      QuaySecret:
+        default: Quay Image Repo Password Secret ARN
       CloudGuardScanningEnvironmentId:
         default: D9 AWS Environment ID
       ExecutionRole:
@@ -50,6 +56,14 @@ Parameters:
   Dome9PasswordSecret:
     Type: String
     Description: ARN for Dome9 Password credentials (arn:aws:secretsmanager:*:*:secret:*)
+    AllowedPattern: '^arn:aws:secretsmanager:[A-Za-z0-9-:]+$|^arn:aws-cn:secretsmanager:[A-Za-z0-9-:]+$'
+  RegSecretArn:
+    Type: String
+    Description: ARN for registries credentials (arn:aws:secretsmanager:*:*:secret:*)
+    AllowedPattern: '^arn:aws:secretsmanager:[A-Za-z0-9-:]+$|^arn:aws-cn:secretsmanager:[A-Za-z0-9-:]+$|^$'
+  QuaySecret:
+    Type: String
+    Description: ARN for Quay Registry credentials (arn:aws:secretsmanager:*:*:secret:*)
     AllowedPattern: '^arn:aws:secretsmanager:[A-Za-z0-9-:]+$|^arn:aws-cn:secretsmanager:[A-Za-z0-9-:]+$'
   CloudGuardScanningEnvironmentId:
     Type: String
@@ -98,6 +112,8 @@ Parameters:
     Type: String
     Description: The image to be used for the task
     Default: '533267110973.dkr.ecr.ap-east-1.amazonaws.com/unique-ecr-repo-20240618080112:consec-imagescan-engine-2.28.0'
+Conditions:
+  IsRegSecretArnNotEmpty: !Not [ !Equals [ !Ref RegSecretArn, "" ] ]
 Resources:
   ConsecEcsTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -123,6 +139,11 @@ Resources:
             - Name: REGISTRY_ONLY
               Value: true
           Secrets:
+            - !If
+              - IsRegSecretArnNotEmpty
+              - Name: REG_SECRET
+                ValueFrom: !Ref RegSecretArn
+              - !Ref "AWS::NoValue"
             - Name: CHKP_CLOUDGUARD_SECRET
               ValueFrom: !Ref Dome9PasswordSecret
           LogConfiguration:
@@ -132,14 +153,20 @@ Resources:
               awslogs-region: !Sub '${AWS::Region}'
               awslogs-stream-prefix: consec
               awslogs-create-group: 'true'
+          RepositoryCredentials:
+            CredentialsParameter: !Ref QuaySecret
+          MountPoints: []
+          VolumesFrom: []
           Image: !Ref Image
           Name: consec-imagescan-container
+      PlacementConstraints: []
+      Memory: !Ref Memory
+      Family: !Join ['', ['consec-imagescan-task-definition-', !Ref RegistryAgentMode]]
       RequiresCompatibilities:
         - FARGATE
       NetworkMode: awsvpc
       Cpu: !Ref Cpu
-      Memory: !Ref Memory
-      Family: !Join ['', ['consec-imagescan-task-definition-', !Ref RegistryAgentMode]]
+      Volumes: []
   ConsecEcsService:
     Type: AWS::ECS::Service
     Properties:

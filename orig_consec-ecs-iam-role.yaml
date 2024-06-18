@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: 2010-09-09
 Description: Creates an IAM role for selected permissions
 Metadata:
   AWS::CloudFormation::Interface:
@@ -7,18 +7,33 @@ Metadata:
           default: CloudGuard
         Parameters:
           - Dome9PasswordSecret
+          - QuaySecret
       - Label:
           default: AWS
-        Parameters: []
+        Parameters:
+          - RegSecretArn
     ParameterLabels:
+      RegSecretArn:
+        default: Optional - Registry Secret Arn (Required for User Access Keys authentication)
       Dome9PasswordSecret:
         default: Dome9 Password Secret ARN
+      QuaySecret:
+        default: Quay Image Repo Password Secret ARN
 Parameters:
   Dome9PasswordSecret:
     Type: String
     Description: ARN for Dome9 Password credentials (arn:aws:secretsmanager:*:*:secret:*)
     AllowedPattern: '^arn:aws:secretsmanager:[A-Za-z0-9-:]+$|^arn:aws-cn:secretsmanager:[A-Za-z0-9-:]+$'
+  RegSecretArn:
+    Type: String
+    Description: ARN for registries credentials (arn:aws:secretsmanager:*:*:secret:*)
+    AllowedPattern: '^arn:aws:secretsmanager:[A-Za-z0-9-:]+$|^arn:aws-cn:secretsmanager:[A-Za-z0-9-:]+$|^$'
+  QuaySecret:
+    Type: String
+    Description: ARN for Quay Registry credentials (arn:aws:secretsmanager:*:*:secret:*)
+    AllowedPattern: '^arn:aws:secretsmanager:[A-Za-z0-9-:]+$|^arn:aws-cn:secretsmanager:[A-Za-z0-9-:]+$'
 Conditions:
+  IsRegSecretArnNotEmpty: !Not [ !Equals [ !Ref RegSecretArn, "" ] ]
   IsAwsCn: !Equals [ !Ref "AWS::Partition", "aws-cn" ]
 Resources:
   ConsecEcsRole:
@@ -37,11 +52,13 @@ Resources:
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              - Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
+              - Action:
+                  - 'secretsmanager:GetSecretValue'
+                Effect: Allow
                 Resource:
+                  - !If [ IsRegSecretArnNotEmpty, !Ref RegSecretArn, !Ref "AWS::NoValue" ]
                   - !Ref Dome9PasswordSecret
+                  - !Ref QuaySecret
               - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
@@ -52,17 +69,6 @@ Resources:
                   - logs:GetLogEvents
                 Resource:
                   - !If [ IsAwsCn, 'arn:aws-cn:logs:*:*:log-group:fargate/consec:*', 'arn:aws:logs:*:*:log-group:fargate/consec:*']
-              - Effect: Allow
-                Action:
-                  - ecr:GetDownloadUrlForLayer
-                  - ecr:BatchGetImage
-                  - ecr:BatchCheckLayerAvailability
-                  - ecr:GetAuthorizationToken
-                  - ecr:DescribeRepositories
-                  - ecr:ListImages
-                  - ecr:DescribeImages
-                  - ecr:BatchGetImage
-                Resource: '*'
   ConsecEcsTaskRole:
     Type: AWS::IAM::Role
     Properties:
