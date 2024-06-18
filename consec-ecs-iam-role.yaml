@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: 2010-09-09
+AWSTemplateFormatVersion: '2010-09-09'
 Description: Creates an IAM role for selected permissions
 Metadata:
   AWS::CloudFormation::Interface:
@@ -7,6 +7,9 @@ Metadata:
           default: CloudGuard
         Parameters:
           - Dome9PasswordSecret
+      - Label:
+          default: AWS
+        Parameters: []
     ParameterLabels:
       Dome9PasswordSecret:
         default: Dome9 Password Secret ARN
@@ -49,6 +52,15 @@ Resources:
                   - logs:GetLogEvents
                 Resource:
                   - !If [ IsAwsCn, 'arn:aws-cn:logs:*:*:log-group:fargate/consec:*', 'arn:aws:logs:*:*:log-group:fargate/consec:*']
+              - Effect: Allow
+                Action:
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:BatchCheckLayerAvailability
+                  - sts:AssumeRole
+                  - sts:GetCallerIdentity
+                  - sts:GetSessionToken
+                Resource: '*'
   ConsecEcsTaskRole:
     Type: AWS::IAM::Role
     Properties:

@@ -58,7 +58,7 @@ Parameters:
   ECSClusterArn:
     Type: String
     Description: 'ARN for existing ECS Cluster (arn:aws:ecs:*:cluster/*)'
-    AllowedPattern: '^arn:aws:ecs:[A-Za-z0-9-:]+\:cluster\/[A-Za-z0-9-:]+$|^arn:aws-cn:ecs:[A-Za-z0-9-:]+\:cluster\/[A-Za-z0-9-:]+$'
+    AllowedPattern: '^arn:aws:ecs:[A-Za-z0-9-]+:[0-9]{12}:cluster\/[A-Za-z0-9\-\/]+$|^arn:aws-cn:ecs:[A-Za-z0-9-]+:[0-9]{12}:cluster\/[A-Za-z0-9\-\/]+$'
   ReplicaCount:
     Type: Number
     Default: 1

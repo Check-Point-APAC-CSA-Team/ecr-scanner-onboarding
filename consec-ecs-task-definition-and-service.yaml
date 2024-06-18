@@ -57,18 +57,18 @@ Parameters:
   ExecutionRole:
     Type: String
     Description: ARN for Execution Role (arn:aws:iam::*:role/*)
-    AllowedPattern: '^arn:aws:iam:[A-Za-z0-9-:]+role[A-Za-z0-9-:\/]+$|^arn:aws-cn:iam:[A-Za-z0-9-:]+role[A-Za-z0-9-:\/]+$'
+    AllowedPattern: '^arn:aws:iam:[A-Za-z0-9-]+:[0-9]{12}:role\/[A-Za-z0-9\-\/]+$|^arn:aws-cn:iam:[A-Za-z0-9-]+:[0-9]{12}:role\/[A-Za-z0-9\-\/]+$'
   TaskRole:
     Type: String
     Description: ARN for Task Role (arn:aws:iam::*:role/*)
-    AllowedPattern: '^arn:aws:iam:[A-Za-z0-9-:]+role[A-Za-z0-9-:\/]+$|^arn:aws-cn:iam:[A-Za:'
+    AllowedPattern: '^arn:aws:iam:[A-Za-z0-9-]+:[0-9]{12}:role\/[A-Za-z0-9\-\/]+$|^arn:aws-cn:iam:[A-Za-z0-9-]+:[0-9]{12}:role\/[A-Za-z0-9\-\/]+$'
   CloudGuardApiKey:
     Type: String
     Description: CloudGuard API Key
   ECSClusterArn:
     Type: String
     Description: ARN for ECS Cluster (arn:aws:ecs:*:cluster/*)
-    AllowedPattern: '^arn:aws:ecs:[A-Za-z0-9-:]+\:cluster\/[A-Za:'
+    AllowedPattern: '^arn:aws:ecs:[A-Za-z0-9-]+:[0-9]{12}:cluster\/[A-Za-z0-9\-\/]+$|^arn:aws-cn:ecs:[A-Za-z0-9-]+:[0-9]{12}:cluster\/[A-Za-z0-9\-\/]+$'
   ReplicaCount:
     Type: Number
     Default: 1
