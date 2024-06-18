@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Creates Task Definition and Service for Image Assurance Scanner
+Description: Creates Task Definition and Service for Image Assurance Scanner and internal ECR Repo to pull the Image
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:

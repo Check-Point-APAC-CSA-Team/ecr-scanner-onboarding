@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Check Point CloudGuard Workload Registry Image Scanner With Existing ECS Cluster
+Description: Check Point CloudGuard Workload Registry Image Scanner With Existing ECS Cluster and internal ECR Repo to pull the Image
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:

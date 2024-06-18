@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Creates an IAM role for selected permissions
+Description: Creates an IAM role for selected permissions and internal ECR Repo to pull the Image
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
