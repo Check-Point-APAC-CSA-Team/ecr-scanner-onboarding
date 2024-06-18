@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: 2010-09-09
+AWSTemplateFormatVersion: '2010-09-09'
 Description: Check Point CloudGuard Workload Registry Image Scanner With Existing ECS Cluster
 Metadata:
   AWS::CloudFormation::Interface:
@@ -13,19 +13,14 @@ Metadata:
           default: AWS
         Parameters:
           - Subnet
-          - RegSecretArn
           - ReplicaCount
           - ECSClusterArn
           - CPU
           - Memory
-          - UseInternalImage
-          - InternalRegistryUrl
-          - ImageName
+          - Image
     ParameterLabels:
       CloudGuardScanningEnvironmentId:
         default: Environment ID
-      RegSecretArn:
-        default: Optional - Registry Secret Arn (Required for User Access Keys authentication)
       ECSClusterArn:
         default: ECS Cluster Arn
       CloudGuardApiKey:
@@ -38,12 +33,8 @@ Metadata:
         default: Cpu for ecs scanner/lister task.
       Memory:
         default: Memory for ecs scanner/lister task.
-      UseInternalImage:
-        default: Use Internal Image Repository
-      InternalRegistryUrl:
-        default: Internal Registry URL
-      ImageName:
-        default: Image Name
+      Image:
+        default: Image URI
 Parameters:
   Subnet:
     Type: List<AWS::EC2::Subnet::Id>
@@ -64,10 +55,6 @@ Parameters:
     Type: String
     Description: The CloudGuard service account API Key secret
     NoEcho: true
-  RegSecretArn:
-    Type: String
-    Description: 'ARN for registries credentials (arn:aws:secretsmanager:*:*:secret:*)'
-    AllowedPattern: '^arn:aws:secretsmanager:[A-Za-z0-9-:]+$|^arn:aws-cn:secretsmanager:[A-Za-z0-9-:]+$|^$'
   ECSClusterArn:
     Type: String
     Description: 'ARN for existing ECS Cluster (arn:aws:ecs:*:cluster/*)'
@@ -88,38 +75,23 @@ Parameters:
       https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html#cfn-ecs-taskdefinition-memory
     Type: String
     Default: 2048
-  UseInternalImage:
+  Image:
     Type: String
-    Description: Whether to use an internal image repository (true/false)
-    AllowedValues: [true, false]
-    Default: false
-  InternalRegistryUrl:
-    Type: String
-    Description: The URL of the internal registry where the image is stored
-    Default: ""
-  ImageName:
-    Type: String
-    Description: The name of the image to be pulled from the internal registry
-    Default: ""
-Conditions:
-  UseInternalImageCondition: !Equals [ !Ref UseInternalImage, "true" ]
+    Description: The image to be used for the task
+    Default: '533267110973.dkr.ecr.ap-east-1.amazonaws.com/unique-ecr-repo-20240618080112:consec-imagescan-engine-2.28.0'
 Resources:
   ConsecEcsRole:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cloudguard-consec-onboarding.s3.us-west-2.amazonaws.com/consec/latest/templates/us1/common-resources/consec-ecs-iam-role.yaml
+      TemplateURL: https://consecpoc.s3.ap-east-1.amazonaws.com/consec-ecs-iam-role.yaml
       Parameters:
         Dome9PasswordSecret: !Ref Dome9PasswordSecret
-        QuaySecret: !Ref QuaySecret
-        RegSecretArn: !Ref RegSecretArn
   ConsecEcsTaskConfigurations:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: https://consecpoc.s3.ap-east-1.amazonaws.com/consec-ecs-task-definition-and-service.yaml
       Parameters:
         Dome9PasswordSecret: !Ref Dome9PasswordSecret
-        QuaySecret: !Ref QuaySecret
-        RegSecretArn: !Ref RegSecretArn
         CloudGuardScanningEnvironmentId: !Ref CloudGuardScanningEnvironmentId
         CloudGuardApiKey: !Ref CloudGuardApiKey
         ExecutionRole: !GetAtt ConsecEcsRole.Outputs.ConsecEcsRoleARN
@@ -132,18 +104,13 @@ Resources:
         RegistryAgentMode: 'scan'
         Cpu: !Ref CPU
         Memory: !Ref Memory
-        Image: !If
-          - UseInternalImageCondition
-          - !Sub "${InternalRegistryUrl}/${ImageName}"
-          - "quay.io/checkpoint/consec-imagescan-engine:2.28.0"
+        Image: !Ref Image
   ConsecListEcsTaskConfigurations:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: https://consecpoc.s3.ap-east-1.amazonaws.com/consec-ecs-task-definition-and-service.yaml
       Parameters:
         Dome9PasswordSecret: !Ref Dome9PasswordSecret
-        QuaySecret: !Ref QuaySecret
-        RegSecretArn: !Ref RegSecretArn
         CloudGuardScanningEnvironmentId: !Ref CloudGuardScanningEnvironmentId
         CloudGuardApiKey: !Ref CloudGuardApiKey
         ExecutionRole: !GetAtt ConsecEcsRole.Outputs.ConsecEcsRoleARN
@@ -156,16 +123,7 @@ Resources:
         RegistryAgentMode: 'list'
         Cpu: !Ref CPU
         Memory: !Ref Memory
-        Image: !If
-          - UseInternalImageCondition
-          - !Sub "${InternalRegistryUrl}/${ImageName}"
-          - "quay.io/checkpoint/consec-imagescan-engine:2.28.0"
-  QuaySecret:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Name: consec-cloudguard-quay-pull-secret
-      SecretString: >-
-        {"username":"checkpoint+public_access","password":"64DILXL1OVTI9O7ZXVPVBV9703XVCS4210UIKLPSBYM2ES0PLSENPDCMKZF1V62S"}
+        Image: !Ref Image
   Dome9PasswordSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
