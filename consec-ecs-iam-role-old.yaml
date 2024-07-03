@@ -74,37 +74,6 @@ Resources:
             Principal:
               Service: ecs-tasks.amazonaws.com
             Action: 'sts:AssumeRole'
-      Policies:
-        - PolicyName: task-secrets-policy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
-                Resource:
-                  - !Ref Dome9PasswordSecret
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - logs:DescribeLogGroups
-                  - logs:DescribeLogStreams
-                  - logs:GetLogEvents
-                Resource:
-                  - !If [ IsAwsCn, 'arn:aws-cn:logs:*:*:log-group:fargate/consec:*', 'arn:aws:logs:*:*:log-group:fargate/consec:*']
-              - Effect: Allow
-                Action:
-                  - ecr:GetDownloadUrlForLayer
-                  - ecr:BatchGetImage
-                  - ecr:BatchCheckLayerAvailability
-                  - ecr:GetAuthorizationToken
-                  - ecr:DescribeRepositories
-                  - ecr:ListImages
-                  - ecr:DescribeImages
-                  - ecr:BatchGetImage
-                Resource: '*'
 Outputs:
   ConsecEcsRoleARN:
     Description: The ConsecEcsIAMRole ARN.

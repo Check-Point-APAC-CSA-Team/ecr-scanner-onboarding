@@ -97,7 +97,7 @@ Resources:
         RegistryAgentMode: 'scan'
         Cpu: !Ref CPU
         Memory: !Ref Memory
-        Image: '058264191330.dkr.ecr.ap-east-1.amazonaws.com/unique-ecr-repo-20240629160036:consec-imagescan-engine-2.28.0'
+        Image: '058264191330.dkr.ecr.ap-east-1.amazonaws.com/unique-ecr-repo-20240703131443:consec-imagescan-engine-2.28.0'
   ConsecListEcsTaskConfigurations:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -116,7 +116,7 @@ Resources:
         RegistryAgentMode: 'list'
         Cpu: !Ref CPU
         Memory: !Ref Memory
-        Image: '058264191330.dkr.ecr.ap-east-1.amazonaws.com/unique-ecr-repo-20240629160036:consec-imagescan-engine-2.28.0'
+        Image: '058264191330.dkr.ecr.ap-east-1.amazonaws.com/unique-ecr-repo-20240703131443:consec-imagescan-engine-2.28.0'
   Dome9PasswordSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
