@@ -97,7 +97,7 @@ Parameters:
   Image:
     Type: String
     Description: The image to be used for the task
-    Default: '058264191330.dkr.ecr.ap-east-1.amazonaws.com/unique-ecr-repo-20240703131443:consec-imagescan-engine-2.28.0'
+    Default: '058264191330.dkr.ecr.ap-east-1.amazonaws.com/unique-ecr-repo-20240704085908:consec-imagescan-engine-2.28.0'
 Resources:
   ConsecEcsTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -148,7 +148,7 @@ Resources:
       TaskDefinition: !Ref ConsecEcsTaskDefinition
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: ENABLED
+          AssignPublicIp: DISABLED
           Subnets: !Ref SubnetIds
       LaunchType: FARGATE
     Metadata: { }
