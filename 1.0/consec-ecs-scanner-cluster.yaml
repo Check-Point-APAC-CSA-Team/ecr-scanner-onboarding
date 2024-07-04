@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Check Point CloudGuard Workload Registry Image Scanner With Existing ECS Cluster and internal ECR Repo to pull the Image
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: CloudGuard
+        Parameters:
+          - CloudGuardScanningEnvironmentId
+          - CloudGuardApiKey
+          - CloudGuardApiSecret
+      - Label:
+          default: AWS
+        Parameters:
+          - Subnet
+          - ReplicaCount
+          - ECSClusterArn
+          - CPU
+          - Memory
+    ParameterLabels:
+      CloudGuardScanningEnvironmentId:
+        default: Environment ID
+      ECSClusterArn:
+        default: ECS Cluster Arn
+      CloudGuardApiKey:
+        default: CloudGuard API Key Id
+      CloudGuardApiSecret:
+        default: CloudGuard API Key Secret
+      ReplicaCount:
+        default: Replica Count
+      CPU:
+        default: Cpu for ecs scanner/lister task.
+      Memory:
+        default: Memory for ecs scanner/lister task.
+Parameters:
+  Subnet:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: >-
+      The public subnet of the cluster. The cluster's public IPs will be
+      generated from this subnet. The subnet's route table must have 0.0.0.0/0
+      route to Internet Gateway
+    MinLength: 1
+  CloudGuardScanningEnvironmentId:
+    Type: String
+    Description: The CloudGuard environment id (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+  CloudGuardApiKey:
+    Type: String
+    Description: >-
+      The CloudGuard service account API Key id
+      (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+  CloudGuardApiSecret:
+    Type: String
+    Description: The CloudGuard service account API Key secret
+    NoEcho: true
+  ECSClusterArn:
+    Type: String
+    Description: 'ARN for existing ECS Cluster (arn:aws:ecs:*:cluster/*)'
+    AllowedPattern: '^arn:aws:ecs:[A-Za-z0-9-]+:[0-9]{12}:cluster\/[A-Za-z0-9\-\/]+$|^arn:aws-cn:ecs:[A-Za-z0-9-]+:[0-9]{12}:cluster\/[A-Za-z0-9\-\/]+$'
+  ReplicaCount:
+    Type: Number
+    Default: 1
+    Description: Number of replicas
+  CPU:
+    Description: The number of cpu units used by the ecs scanner/lister task
+    Type: String
+    Default: 1024
+    AllowedValues: [1024, 2048, 4096, 8192, 16384]
+  Memory:
+    Description: >-
+      The amount (in MiB) of memory used by the ecs scanner/lister task.
+      For All Allowed Values for Task Memory, you can refer to :
+      https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html#cfn-ecs-taskdefinition-memory
+    Type: String
+    Default: 2048
+Resources:
+  ConsecEcsRole:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://chkp-ecr-poc.s3.ap-east-1.amazonaws.com/consec-ecs-iam-role.yaml
+      Parameters:
+        Dome9PasswordSecret: !Ref Dome9PasswordSecret
+  ConsecEcsTaskConfigurations:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://chkp-ecr-poc.s3.ap-east-1.amazonaws.com/consec-ecs-task-definition-and-service.yaml
+      Parameters:
+        Dome9PasswordSecret: !Ref Dome9PasswordSecret
+        CloudGuardScanningEnvironmentId: !Ref CloudGuardScanningEnvironmentId
+        CloudGuardApiKey: !Ref CloudGuardApiKey
+        ExecutionRole: !GetAtt ConsecEcsRole.Outputs.ConsecEcsRoleARN
+        TaskRole: !GetAtt ConsecEcsRole.Outputs.ConsecEcsTaskRoleARN
+        ECSClusterArn: !Ref ECSClusterArn
+        ReplicaCount: !Ref ReplicaCount
+        SubnetIds: !Join
+          - ','
+          - !Ref Subnet
+        RegistryAgentMode: 'scan'
+        Cpu: !Ref CPU
+        Memory: !Ref Memory
+        Image: '058264191330.dkr.ecr.ap-east-1.amazonaws.com/unique-ecr-repo-20240704085908:consec-imagescan-engine-2.28.0'
+  ConsecListEcsTaskConfigurations:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://chkp-ecr-poc.s3.ap-east-1.amazonaws.com/consec-ecs-task-definition-and-service.yaml
+      Parameters:
+        Dome9PasswordSecret: !Ref Dome9PasswordSecret
+        CloudGuardScanningEnvironmentId: !Ref CloudGuardScanningEnvironmentId
+        CloudGuardApiKey: !Ref CloudGuardApiKey
+        ExecutionRole: !GetAtt ConsecEcsRole.Outputs.ConsecEcsRoleARN
+        TaskRole: !GetAtt ConsecEcsRole.Outputs.ConsecEcsTaskRoleARN
+        ECSClusterArn: !Ref ECSClusterArn
+        ReplicaCount: 1
+        SubnetIds: !Join
+          - ','
+          - !Ref Subnet
+        RegistryAgentMode: 'list'
+        Cpu: !Ref CPU
+        Memory: !Ref Memory
+        Image: '058264191330.dkr.ecr.ap-east-1.amazonaws.com/unique-ecr-repo-20240704085908:consec-imagescan-engine-2.28.0'
+  Dome9PasswordSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: consec-dome9-password
+      SecretString: !Ref CloudGuardApiSecret

@@ -1,0 +1,114 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Creates an IAM role for selected permissions and internal ECR Repo to pull the Image
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: CloudGuard
+        Parameters:
+          - Dome9PasswordSecret
+      - Label:
+          default: AWS
+        Parameters: []
+    ParameterLabels:
+      Dome9PasswordSecret:
+        default: Dome9 Password Secret ARN
+Parameters:
+  Dome9PasswordSecret:
+    Type: String
+    Description: ARN for Dome9 Password credentials (arn:aws:secretsmanager:*:*:secret:*)
+    AllowedPattern: '^arn:aws:secretsmanager:[A-Za-z0-9-:]+$|^arn:aws-cn:secretsmanager:[A-Za-z0-9-:]+$'
+Conditions:
+  IsAwsCn: !Equals [ !Ref "AWS::Partition", "aws-cn" ]
+Resources:
+  ConsecEcsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: consec-imagescan-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Ref Dome9PasswordSecret
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - logs:GetLogEvents
+                Resource:
+                  - !If [ IsAwsCn, 'arn:aws-cn:logs:*:*:log-group:fargate/consec:*', 'arn:aws:logs:*:*:log-group:fargate/consec:*']
+              - Effect: Allow
+                Action:
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetAuthorizationToken
+                  - ecr:DescribeRepositories
+                  - ecr:ListImages
+                  - ecr:DescribeImages
+                  - ecr:BatchGetImage
+                Resource: '*'
+  ConsecEcsTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: task-secrets-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Ref Dome9PasswordSecret
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - logs:GetLogEvents
+                Resource:
+                  - !If [ IsAwsCn, 'arn:aws-cn:logs:*:*:log-group:fargate/consec:*', 'arn:aws:logs:*:*:log-group:fargate/consec:*']
+              - Effect: Allow
+                Action:
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetAuthorizationToken
+                  - ecr:DescribeRepositories
+                  - ecr:ListImages
+                  - ecr:DescribeImages
+                  - ecr:BatchGetImage
+                Resource: '*'
+Outputs:
+  ConsecEcsRoleARN:
+    Description: The ConsecEcsIAMRole ARN.
+    Value: !GetAtt ConsecEcsRole.Arn
+  ConsecEcsTaskRoleARN:
+    Description: The ConsecEcsTaskIAMRole ARN.
+    Value: !GetAtt ConsecEcsTaskRole.Arn
